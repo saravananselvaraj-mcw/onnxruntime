@@ -1154,6 +1154,16 @@ TEST(OpSchemaTypeConstraintTest, Add_SingleConstraint) {
   EXPECT_EQ(output_indices[0], 0u);
 }
 
+TEST(OpSchemaTypeConstraintTest, EPContext_AllowsFourBitTensors) {
+  Ort::OpSchema schema = Ort::GetOpSchema("EPContext", 1, "com.microsoft");
+  ASSERT_NE(static_cast<OrtOpSchema*>(schema), nullptr);
+  ASSERT_EQ(schema.GetTypeConstraintCount(), 1u);
+
+  const auto allowed_types = schema.GetTypeConstraint(0).GetAllowedTypes();
+  EXPECT_THAT(allowed_types, ::testing::Contains("tensor(int4)"));
+  EXPECT_THAT(allowed_types, ::testing::Contains("tensor(uint4)"));
+}
+
 // Test type constraints for LSTM (multiple constraints: T and T1).
 TEST(OpSchemaTypeConstraintTest, LSTM_MultipleConstraints) {
   Ort::OpSchema schema = Ort::GetOpSchema("LSTM", 20, "");

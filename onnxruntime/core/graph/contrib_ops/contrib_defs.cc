@@ -3563,6 +3563,7 @@ void RegisterContribSchemas() {
       .TypeConstraint(
           "T",
           {"tensor(bool)",
+           "tensor(int4)",
            "tensor(int8)",
            "tensor(int16)",
            "tensor(int32)",
@@ -3571,6 +3572,7 @@ void RegisterContribSchemas() {
            "tensor(uint16)",
            "tensor(uint32)",
            "tensor(uint64)",
+           "tensor(uint4)",
            "tensor(float16)",
            "tensor(float)",
            "tensor(double)",
