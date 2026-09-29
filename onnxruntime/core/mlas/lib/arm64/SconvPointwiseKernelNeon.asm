@@ -27,10 +27,14 @@
         ; Stack layout for arguments passed on the stack.  The first eight arguments
         ; are in x0-x7, the remaining four are placed on the stack by the caller.
 
-PW_OutputStride EQU 0
-PW_OutputCount EQU 8
-PW_Bias EQU 16
-PW_Flags EQU 24
+; Size of the local frame allocated by the prolog. The incoming stack arguments
+; sit above it, so their offsets are relative to it.
+PW_LocalFrame EQU 96
+
+PW_OutputStride EQU (0 + PW_LocalFrame)
+PW_OutputCount EQU (8 + PW_LocalFrame)
+PW_Bias EQU (16 + PW_LocalFrame)
+PW_Flags EQU (24 + PW_LocalFrame)
 
         ; Kernel flag bits.  Keep these in sync with sconv_nchwc_kernel_neon.h.
 PWFlag_Accumulate EQU 1
@@ -200,7 +204,13 @@ pw_ic_loop1
         ;  Entry point
         ;-------------------------------------------------------------------------
 
-        LEAF_ENTRY MlasConvPointwiseFloatKernelNeonAsm
+        NESTED_ENTRY MlasConvPointwiseFloatKernelNeonAsm
+
+        ; Reserve the local frame used to spill the base arguments below. This is a
+        ; NESTED_ENTRY rather than a LEAF_ENTRY because a leaf function must not move
+        ; sp: no unwind data is emitted for one, so an unwind while sp is adjusted
+        ; would resolve to the wrong frame.
+        PROLOG_STACK_ALLOC PW_LocalFrame
 
         ; Load the arguments passed on the stack.
         ldr     x8,[sp,#PW_OutputStride]
@@ -209,7 +219,6 @@ pw_ic_loop1
         ldr     w11,[sp,#PW_Flags]
 
         ; Spill base arguments so caller-saved registers can be reused freely.
-        sub     sp,sp,#96
         stp     x0,x1,[sp,#0]
         stp     x2,x3,[sp,#16]
         stp     x4,x5,[sp,#32]
@@ -517,9 +526,9 @@ pw_after_filter
         blt     pw_filter_loop
 pw_exit
 
-        add     sp,sp,#96
-        ret
+        EPILOG_STACK_FREE PW_LocalFrame
+        EPILOG_RETURN
 
-        LEAF_END MlasConvPointwiseFloatKernelNeonAsm
+        NESTED_END MlasConvPointwiseFloatKernelNeonAsm
 
         END

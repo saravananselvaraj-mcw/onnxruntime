@@ -181,8 +181,15 @@ function(setup_mlas_source_for_windows)
       )
 
       if (onnxruntime_USE_ARM_NEON_NCHWC)
-		setup_arm_neon_nchwc()
-	  endif()
+        # The armasm64 translations of the hand written NCHWc micro-kernels. Like the
+        # rest of the list above they are run through cl.exe /P before armasm64.
+        list(APPEND mlas_platform_preprocess_srcs
+          ${MLAS_SRC_DIR}/arm64/SconvPointwiseKernelNeon.asm
+          ${MLAS_SRC_DIR}/arm64/SconvNchwcKernelNeon.asm
+          ${MLAS_SRC_DIR}/arm64/SconvKernelNeon.asm
+        )
+        setup_arm_neon_nchwc()
+      endif()
 
 	  if (onnxruntime_USE_KLEIDIAI)
         setup_kleidiai()
@@ -431,14 +438,10 @@ function (setup_arm_neon_nchwc)
      ${MLAS_SRC_DIR}/aarch64/SconvDepthwiseKernelNeon.S
      ${MLAS_SRC_DIR}/aarch64/SconvPointwiseKernelNeon.S
      )
-  else()
-      target_sources(onnxruntime_mlas PRIVATE
-      # The armasm64 translations of the hand written micro-kernels above.
-      ${MLAS_SRC_DIR}/arm64/SconvPointwiseKernelNeon.asm
-      ${MLAS_SRC_DIR}/arm64/SconvNchwcKernelNeon.asm
-      ${MLAS_SRC_DIR}/arm64/SconvKernelNeon.asm
-      )
   endif()
+  # On Windows the armasm64 translations of the micro-kernels above are added to
+  # mlas_platform_preprocess_srcs in setup_mlas_source_for_windows, so that they go
+  # through the same cl.exe /P step as the rest of the arm64 assembly.
   mlas_add_private_compile_definitions(MLAS_USE_ARM_NEON_NCHWC)
 endfunction ()
 

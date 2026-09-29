@@ -718,7 +718,10 @@ $Tag.Lnum2
         PROLOG_NOP str     x0,[sp,#LFrame_InputBaseSaved]
         PROLOG_NOP str     x1,[sp,#LFrame_FilterBaseSaved]
         PROLOG_NOP str     x2,[sp,#LFrame_OutputBaseSaved]
-        PROLOG_NOP str     x30,[sp,#LFrame_LrSaved]
+        ; x30 is clobbered by the bl to LKernelBody below, so it is saved with
+        ; PROLOG_SAVE_REG rather than PROLOG_NOP: the unwind data has to record
+        ; where the return address lives for SEH to walk through this frame.
+        PROLOG_SAVE_REG x30,#LFrame_LrSaved
 
         cmp     x5,#4
         b.ne    LRunKernelSingle
@@ -916,7 +919,7 @@ LDoneEntry
         EPILOG_NOP ldp     x25,x26,[sp,#LFrame_x25_x26]
         EPILOG_NOP ldp     x23,x24,[sp,#LFrame_x23_x24]
         EPILOG_NOP ldp     x21,x22,[sp,#LFrame_x21_x22]
-        EPILOG_NOP ldr     x30,[sp,#LFrame_LrSaved]
+        EPILOG_RESTORE_REG x30,#LFrame_LrSaved
         EPILOG_RESTORE_REG_PAIR x19, x20, #LFrame_SavedRegs!
         EPILOG_RETURN
 
